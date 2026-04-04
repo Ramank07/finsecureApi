@@ -5,12 +5,14 @@ import {
   createRecord,
   getRecords,
   deleteRecord,
+  patchRecord
 } from "../controllers/recordController.js";
 
 const router = express.Router();
 
 router.post("/", auth, allowRoles("admin"), createRecord);
-router.get("/", auth, allowRoles("admin", "analyst", "viewer"), getRecords);
+router.get("/", auth, getRecords);
+router.patch("/:id",auth,patchRecord);
 router.delete("/:id", auth, allowRoles("admin"), deleteRecord);
 
 export default router;

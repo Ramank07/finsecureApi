@@ -15,4 +15,4 @@ const recordSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Record", recordSchema);
+export default mongoose.model("Record", recordSchema);  
