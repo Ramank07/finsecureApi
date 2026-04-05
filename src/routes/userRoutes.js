@@ -3,12 +3,12 @@ import { auth } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/role.js";
 import {
   updateUserStatus,
-  changeUserRole
+  changeUserRole,
+    getAllUsers
 } from "../controllers/userController.js";
 
 const router = express.Router();
 
-// Only admin can update users
 router.patch(
   "/:id/status",
   auth,
@@ -22,5 +22,7 @@ router.patch(
   allowRoles("admin"),
   changeUserRole
 );
+
+router.get("/", auth, allowRoles("admin"), getAllUsers);
 
 export default router;

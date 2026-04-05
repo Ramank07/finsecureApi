@@ -1,12 +1,32 @@
+import mongoose from "mongoose";
 import User from "../models/user.js";
+
+const isValidObjectId = (id) => {
+  return mongoose.Types.ObjectId.isValid(id);
+};
 
 export const updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
     if (!["active", "inactive"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+      return res.status(400).json({
+        message: "Invalid status. Must be 'active' or 'inactive'"
+      });
+    }
+
+    const userExists = await User.findById(id);
+    if (!userExists) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     const user = await User.findByIdAndUpdate(
@@ -15,13 +35,14 @@ export const updateUserStatus = async (req, res) => {
       { new: true }
     );
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
     res.status(200).json({
       message: "User status updated successfully",
-      user
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        status: user.status
+      }
     });
   } catch (error) {
     console.error("Error updating user status:", error);
@@ -34,16 +55,22 @@ export const changeUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;
 
-    // ✅ 1. Validate role
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    if (!role) {
+      return res.status(400).json({ message: "Role is required" });
+    }
+
     const allowedRoles = ["viewer", "analyst", "admin"];
 
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({
-        message: "Invalid role"
+        message: `Invalid role. Must be one of: ${allowedRoles.join(", ")}`
       });
     }
 
-    // ✅ 2. Check user exists
     const user = await User.findById(id);
 
     if (!user) {
@@ -53,8 +80,8 @@ export const changeUserRole = async (req, res) => {
     }
 
     if (req.user.id === id && role !== "admin") {
-      return res.status(400).json({
-        message: "Admin cannot downgrade own role"
+      return res.status(403).json({
+        message: "Cannot downgrade your own admin role"
       });
     }
 
@@ -63,7 +90,7 @@ export const changeUserRole = async (req, res) => {
 
       if (adminCount === 1) {
         return res.status(400).json({
-          message: "At least one admin must exist"
+          message: "Cannot remove the last admin from the system"
         });
       }
     }
@@ -75,12 +102,31 @@ export const changeUserRole = async (req, res) => {
       message: "User role updated successfully",
       user: {
         id: user._id,
+        name: user.name,
+        email: user.email,
         role: user.role
       }
     });
 
   } catch (error) {
     console.error("Error changing user role:", error);
+    res.status(500).json({
+      message: "Server error"
+    });
+  }
+};
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, "-password");
+
+    res.status(200).json({
+      message: "Users retrieved successfully",
+      count: users.length,
+      users
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
     res.status(500).json({
       message: "Server error"
     });

@@ -2,19 +2,16 @@ import Record from "../models/record.js";
 
 export const getSummary = async (req, res) => {
   try {
-    // total income
     const income = await Record.aggregate([
       { $match: { type: "income" } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]);
 
-    // total expense
     const expense = await Record.aggregate([
       { $match: { type: "expense" } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]);
 
-    // 🔥 category-wise expense
     const categoryWise = await Record.aggregate([
       { $match: { type: "expense" } },
       {
@@ -24,6 +21,10 @@ export const getSummary = async (req, res) => {
         },
       },
     ]);
+    const recentActivity = await Record.find()
+      .sort({ date: -1 }) 
+      .limit(5)
+      .populate("createdBy", "name email");
 
     const totalIncome = income[0]?.total || 0;
     const totalExpense = expense[0]?.total || 0;
@@ -35,6 +36,7 @@ export const getSummary = async (req, res) => {
         totalExpense,
         netBalance: totalIncome - totalExpense,
         categoryWiseExpense: categoryWise,
+        recentActivity
       }
     });
   } catch (error) {
