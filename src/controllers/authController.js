@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import bcrypt from "bcrypt";
 
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -45,7 +46,7 @@ export const register = async (req, res) => {
         message: "Email already registered"
       });
     }
-
+    const hashedPassword = await bcrypt.hash(password, 10);
     const userCount = await User.countDocuments();
     let role = "viewer";
 
@@ -56,7 +57,7 @@ export const register = async (req, res) => {
     const newUser = await User.create({
       name: name.trim(),
       email: email.toLowerCase(),
-      password,
+      password: hashedPassword,
       role,
       status: "active"
     });
@@ -102,8 +103,10 @@ export const login = async (req, res) => {
       });
     }
 
-    if (user.password !== password) {
-      return res.status(401).json({
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
         message: "Invalid credentials"
       });
     }
