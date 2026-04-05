@@ -13,14 +13,13 @@ export const getSummary = async (req, res) => {
     ]);
 
     const categoryWise = await Record.aggregate([
-      { $match: { type: "expense" } },
-      {
-        $group: {
-          _id: "$category",
-          total: { $sum: "$amount" },
-        },
-      },
-    ]);
+  {
+    $group: {
+      _id: "$category",
+      total: { $sum: "$amount" },
+    },
+  },
+]);
     const recentActivity = await Record.find()
       .sort({ date: -1 }) 
       .limit(5)
