@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.post("/", auth, allowRoles("admin"), createRecord);
 router.get("/", auth, getRecords);
-router.patch("/:id",auth,patchRecord);
+router.patch("/:id",auth,allowRoles("admin"),patchRecord);
 router.delete("/:id", auth, allowRoles("admin"), deleteRecord);
 
 export default router;
